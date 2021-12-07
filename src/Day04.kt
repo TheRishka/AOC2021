@@ -1,0 +1,124 @@
+fun main() {
+    fun fillBoards(inputBoards: List<String>) =
+        inputBoards.filter { it.isNotBlank() }.chunked(5).flatMap { board ->
+            listOf(board.map { row ->
+                row.split(' ').filter { it.isNotBlank() }.map {
+                    it.trim().toInt()
+                }
+            })
+        }.map { intsBoard ->
+            val cols = mutableListOf<List<Bing>>()
+            val rows = mutableListOf<List<Bing>>()
+            intsBoard.forEachIndexed { index, board ->
+                rows += board.map {
+                    Bing(it)
+                }
+                val colValues = mutableListOf<Bing>()
+                for (j in 0..4) {
+                    colValues.add(
+                        Bing(intsBoard[j][index])
+                    )
+                }
+                cols.add(
+                    colValues
+                )
+            }
+            Board(
+                cols = cols, rows = rows
+            )
+        }
+
+    fun part1(
+        inputNumbers: List<String>,
+        inputBoards: List<String>
+    ): Int {
+        val numbers = inputNumbers.first().split(',').filter { it.isNotBlank() }.map { value -> value.trim().toInt() }
+
+        val boards = fillBoards(inputBoards)
+
+        for (number in numbers) {
+            var winBoard: Board? = null
+            boards.forEach { board ->
+                board.markIfFound(number)
+                if (board.checkIfWin()) {
+                    winBoard = board.copy()
+                    return@forEach
+                }
+            }
+            if (winBoard != null) {
+                winBoard?.prettyPrint()
+                println(winBoard?.getAllUnmarked()?.map { it.value })
+                val sumOfUnmarked = winBoard?.getAllUnmarked()?.sumOf { it.value } ?: 0
+                return (sumOfUnmarked * number)
+            }
+        }
+        return 0
+    }
+
+    fun part2(
+        inputNumbers: List<String>,
+        inputBoards: List<String>
+    ): Int {
+        return 0
+    }
+
+    val numbers =
+        readInput("Day04")
+
+    val boards = readInput("Day04_2")
+//    println(part1(numbers, boards))
+//    println(part2(numbers, boards))
+
+    println(part1(numbers, boards))
+//    println(part2(input))
+}
+
+data class Board(
+    private val rows: List<List<Bing>>,
+    private val cols: List<List<Bing>>,
+) {
+
+    fun markIfFound(valueToMark: Int) {
+        for (row in rows) {
+            row.find { it.value == valueToMark }?.let {
+                it.isMarked = true
+            }
+        }
+        for (col in cols) {
+            col.find { it.value == valueToMark }?.let {
+                it.isMarked = true
+            }
+        }
+    }
+
+    fun checkIfWin(): Boolean {
+        val atLeastOneRow = rows.any { row ->
+            row.all {
+                it.isMarked
+            }
+        }
+        if (atLeastOneRow) {
+            return true
+        }
+        val atLeastOneColumn = cols.any { col ->
+            col.all {
+                it.isMarked
+            }
+        }
+        return atLeastOneColumn
+    }
+
+    fun prettyPrint() {
+        for (row in rows) {
+            println(row.joinToString(separator = " ") {
+                "${if (it.value < 10) " ${it.value}" else it.value}" + "(${if (it.isMarked) "+" else "-"})"
+            })
+        }
+    }
+
+    fun getAllUnmarked() = cols.flatten().filter { !it.isMarked }
+}
+
+data class Bing(
+    val value: Int, var isMarked: Boolean = false
+)
