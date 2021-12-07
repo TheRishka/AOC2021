@@ -59,6 +59,33 @@ fun main() {
         inputNumbers: List<String>,
         inputBoards: List<String>
     ): Int {
+        val numbers = inputNumbers.first().split(',').filter { it.isNotBlank() }.map { value -> value.trim().toInt() }
+
+        val boards = fillBoards(inputBoards)
+
+        for (number in numbers) {
+            var lastWinBoard: Board? = null
+            var foundTheLastNumber = false
+            boards.forEach { board ->
+                board.markIfFound(number)
+                if (boards.all { it.checkIfWin() }) {
+                    foundTheLastNumber = true
+                }
+            }
+            if (foundTheLastNumber) {
+                boards.forEach { board ->
+                    board.unmarkIfFound(number)
+                }
+                lastWinBoard = boards.last { !it.checkIfWin() }
+                lastWinBoard.markIfFound(number)
+            }
+            if (lastWinBoard != null) {
+                lastWinBoard.prettyPrint()
+                println(lastWinBoard.getAllUnmarked().map { it.value })
+                val sumOfUnmarked = lastWinBoard.getAllUnmarked().sumOf { it.value }
+                return (sumOfUnmarked * number)
+            }
+        }
         return 0
     }
 
@@ -70,7 +97,7 @@ fun main() {
 //    println(part2(numbers, boards))
 
     println(part1(numbers, boards))
-//    println(part2(input))
+    println(part2(numbers, boards))
 }
 
 data class Board(
@@ -87,6 +114,19 @@ data class Board(
         for (col in cols) {
             col.find { it.value == valueToMark }?.let {
                 it.isMarked = true
+            }
+        }
+    }
+
+    fun unmarkIfFound(valueToMark: Int) {
+        for (row in rows) {
+            row.find { it.value == valueToMark }?.let {
+                it.isMarked = false
+            }
+        }
+        for (col in cols) {
+            col.find { it.value == valueToMark }?.let {
+                it.isMarked = false
             }
         }
     }
